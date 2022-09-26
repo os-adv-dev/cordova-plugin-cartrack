@@ -30,7 +30,7 @@
         <!-- Edit config.xml -->
         <config-file target="res/xml/config.xml" parent="/*">
             <preference name="GradlePluginKotlinEnabled" value="true" />
-        </edit-config>
+        </config-config>
         <!-- Edit config.xml -->
     </platform>
     <platform name="ios">
