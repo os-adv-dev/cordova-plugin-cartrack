@@ -1,0 +1,38 @@
+<?xml version='1.0' encoding='utf-8'?>
+<plugin id="com.outsystems.experts.cartrack" version="1.0.0"
+    xmlns="http://apache.org/cordova/ns/plugins/1.0"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <name>CartrackPlugin</name>
+    <js-module name="CartrackPlugin" src="www/CartrackPlugin.js">
+        <clobbers target="cordova.plugins.CartrackPlugin" />
+    </js-module>
+    <platform name="android">
+        <config-file parent="/*" target="res/xml/config.xml">
+            <feature name="CartrackPlugin">
+                <param name="android-package" value="com.outsystems.experts.cartrack.CartrackPlugin" />
+            </feature>
+        </config-file>
+        <config-file parent="/*" target="AndroidManifest.xml" />
+        <source-file src="src/android/CartrackPlugin.java" target-dir="src/com/outsystems/experts/cartrack/CartrackPlugin" />
+         
+         <!-- SDK Files -->
+        <framework src="src/android/build.gradle" custom="true" type="gradleReference" />
+        <!-- END SDK Files -->
+         
+         <!-- Gradle -->
+        <resource-file src="src/android/libs/blesdk-release_v3.0.aar" target="libs/blesdk-release_v3.0.aar" />
+         <!-- END Gradle -->
+
+         <!--<edit-config file="AndroidManifest.xml" target="/manifest/uses-sdk" mode="merge">
+            <uses-sdk android:minSdkVersion="23" />
+        </edit-config>-->
+    </platform>
+    <platform name="ios">
+        <config-file parent="/*" target="config.xml">
+            <feature name="CartrackPlugin">
+                <param name="ios-package" value="CartrackPlugin" />
+            </feature>
+        </config-file>
+        <source-file src="src/ios/CartrackPlugin.m" />
+    </platform>
+</plugin>

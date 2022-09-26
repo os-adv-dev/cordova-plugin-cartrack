@@ -1,0 +1,12 @@
+allprojects {
+   repositories {
+      flatDir {
+        dirs '../app/src/main/libs' 
+      }
+   }
+}
+
+dependencies {
+    //implementation fileTree(include: ['*.aar'], dir: 'libs')
+    implementation(name: 'blesdk-release_v3.0', ext: 'aar')
+}

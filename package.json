@@ -1,0 +1,14 @@
+{
+  "name": "CartrackPlugin",
+  "version": "1.0.0",
+  "description": "",
+  "cordova": {
+    "id": "com.outsystems.experts.cartrack",
+    "platforms": []
+  },
+  "keywords": [
+    "ecosystem:cordova"
+  ],
+  "author": "",
+  "license": "ISC"
+}
