@@ -4,8 +4,8 @@ module.exports = {
     configure: function (terminalId, success, error) {
         exec(success, error, 'CartrackPlugin', 'configure', [terminalId]);
     },
-    saveAuthKey: function (success, error) {
-        exec(success, error, 'CartrackPlugin', 'saveAuthKey');
+    saveAuthKey: function (authKey, success, error) {
+        exec(success, error, 'CartrackPlugin', 'saveAuthKey', [authKey]);
     },
     getAuthKey: function (success, error) {
         exec(success, error, 'CartrackPlugin', 'getAuthKey');
@@ -30,6 +30,3 @@ module.exports = {
     }
 
 };
-
-
-

@@ -1,5 +1,7 @@
 package com.outsystems.experts.cartrack;
 
+import android.util.Log;
+
 import com.cartrack.blesdk.ctg.BleListener;
 import com.cartrack.blesdk.ctg.BleService;
 import com.cartrack.blesdk.ctg.BleTerminal;
@@ -30,6 +32,7 @@ public class CartrackPlugin extends CordovaPlugin implements BleListener {
 
     BleTerminal BleTerminal;
     HashMap<CallbackTypes, CallbackContext> CallbackContextList = new HashMap<CallbackTypes, CallbackContext>();
+    String TAG = "CartrackPlugin";
 
     enum CallbackTypes{
         CONFIGURE,
@@ -63,14 +66,17 @@ public class CartrackPlugin extends CordovaPlugin implements BleListener {
                 return true;
             case "disconnect":
                 this.disconnect(callbackContext);
+                return true;
             case "removeAuthKey":
                 this.removeAuthKey(callbackContext);
                 return true;
             case "sendAction":
                 String bleActionStr = args.getString(0);
                 this.sendAction(bleActionStr, callbackContext);
+                return true;
             case "onSignalStrength":
                 this.onSignalStrength(callbackContext);
+                return true;
             case "initErrorHandler":
                 this.initErrorHandler(callbackContext);
                 return true;
@@ -128,7 +134,7 @@ public class CartrackPlugin extends CordovaPlugin implements BleListener {
     }
 
     private void onSignalStrength(CallbackContext callbackContext){
-
+        Log.e(TAG, "onSignalStrength");
     }
 
     private void initErrorHandler(CallbackContext callbackContext){
@@ -147,6 +153,9 @@ public class CartrackPlugin extends CordovaPlugin implements BleListener {
 
         PluginResult result = new PluginResult(PluginResult.Status.OK, errorResponse);
         result.getKeepCallback();
+
+        Log.e(TAG, bleError.getLocalizedDescription());
+
         callbackContext.sendPluginResult(result);
     }
 
@@ -183,7 +192,7 @@ public class CartrackPlugin extends CordovaPlugin implements BleListener {
 
     @Override
     public void onTerminalCommandResult(BleAction bleAction) {
-
+        Log.e(TAG, "onTerminalCommandResult");
     }
 
     @Override
@@ -196,12 +205,12 @@ public class CartrackPlugin extends CordovaPlugin implements BleListener {
 
     @Override
     public void onTerminalDidGetVehicleStats(byte b, GetVehicleStats getVehicleStats) {
-
+        Log.e(TAG, "onTerminalDidGetVehicleStats");
     }
 
     @Override
     public void onTerminalDidGetVehicleStatus(byte b, GetVehicleStatus getVehicleStatus) {
-
+        Log.e(TAG, "onTerminalDidGetVehicleStatus");
     }
 
     @Override
