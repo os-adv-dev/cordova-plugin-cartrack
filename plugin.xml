@@ -26,6 +26,12 @@
          <!--<edit-config file="AndroidManifest.xml" target="/manifest/uses-sdk" mode="merge">
             <uses-sdk android:minSdkVersion="23" />
         </edit-config>-->
+
+        <!-- Edit config.xml -->
+        <config-file target="res/xml/config.xml" parent="/*">
+            <preference name="GradlePluginKotlinEnabled" value="true" />
+        </edit-config>
+        <!-- Edit config.xml -->
     </platform>
     <platform name="ios">
         <config-file parent="/*" target="config.xml">
