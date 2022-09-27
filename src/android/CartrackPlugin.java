@@ -35,7 +35,6 @@ public class CartrackPlugin extends CordovaPlugin implements BleListener {
     String TAG = "CartrackPlugin";
 
     enum CallbackTypes{
-        CONFIGURE,
         SAVE_AUTH_KEY,
         GET_AUTH_KEY,
         SCAN_AND_CONNECT_TO_PERIPHERAL,
@@ -88,46 +87,40 @@ public class CartrackPlugin extends CordovaPlugin implements BleListener {
         BleService.Companion.configure(this.cordova.getContext());
         BleTerminal = BleService.Companion.getTerminal(terminalID);
         BleTerminal.setBleListener(this);
-        CallbackContextList.put(CallbackTypes.CONFIGURE, callbackContext);
         callbackContext.success();
     }
 
     private void saveAuthKey(String authKey, CallbackContext callbackContext) {
-        BleTerminal.saveAuthKey(authKey);
         CallbackContextList.put(CallbackTypes.SAVE_AUTH_KEY, callbackContext);
-        callbackContext.success();
+        BleTerminal.saveAuthKey(authKey);
     }
 
     private void getAuthKey(CallbackContext callbackContext) {
-        String authKey = BleTerminal.getAuthKey();
         CallbackContextList.put(CallbackTypes.GET_AUTH_KEY, callbackContext);
+        String authKey = BleTerminal.getAuthKey();
         callbackContext.success(authKey);
     }
 
     private void scanAndConnectToPeripheral(long timeoutSeconds, CallbackContext callbackContext){
-        BleTerminal.scanAndConnectToPeripheral(timeoutSeconds);
         CallbackContextList.put(CallbackTypes.SCAN_AND_CONNECT_TO_PERIPHERAL, callbackContext);
-        //callbackContext.success();
+        BleTerminal.scanAndConnectToPeripheral(timeoutSeconds);
     }
 
     private void disconnect(CallbackContext callbackContext){
-        BleTerminal.disconnect();
         CallbackContextList.put(CallbackTypes.DISCONNECT, callbackContext);
-        //callbackContext.success();
+        BleTerminal.disconnect();
     }
 
     private void removeAuthKey(CallbackContext callbackContext){
-        BleTerminal.removeAuthKey();
         CallbackContextList.put(CallbackTypes.REMOVE_AUTH_KEY, callbackContext);
-        callbackContext.success();
+        BleTerminal.removeAuthKey();
     }
 
     private void sendAction(String bleActionStr, CallbackContext callbackContext){
         try {
+            CallbackContextList.put(CallbackTypes.SEND_ACTION, callbackContext);
             BleAction bleAction = BleAction.valueOf(bleActionStr);
             BleTerminal.sendAction(bleAction);
-            CallbackContextList.put(CallbackTypes.SEND_ACTION, callbackContext);
-            callbackContext.success();
         } catch (Exception e) {
             callbackContext.error(e.getMessage());
         }
@@ -138,10 +131,9 @@ public class CartrackPlugin extends CordovaPlugin implements BleListener {
     }
 
     private void initErrorHandler(CallbackContext callbackContext){
+        CallbackContextList.put(CallbackTypes.ON_ERROR, callbackContext);
         PluginResult result = new PluginResult(PluginResult.Status.OK);
         result.getKeepCallback();
-
-        CallbackContextList.put(CallbackTypes.ON_ERROR, callbackContext);
     }
 
     @Override

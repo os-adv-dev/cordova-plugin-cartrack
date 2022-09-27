@@ -31,7 +31,16 @@
         <config-file target="res/xml/config.xml" parent="/*">
             <preference name="GradlePluginKotlinEnabled" value="true" />
         </config-file>
-        <!-- Edit config.xml -->
+        <!-- END Edit config.xml -->
+
+         <!-- Edit AndroidManifest.xml -->
+        <config-file target="AndroidManifest.xml" parent="/*">
+            <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+            <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+        </config-file>
+        <!-- END Edit AndroidManifest.xml -->
+
+          
     </platform>
     <platform name="ios">
         <config-file parent="/*" target="config.xml">
