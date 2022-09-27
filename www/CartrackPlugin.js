@@ -27,6 +27,9 @@ module.exports = {
     },
     initErrorHandler: function (success, error) {
         exec(success, error, 'CartrackPlugin', 'initErrorHandler');
+    },
+    requestPermissions: function (success, error) {
+        exec(success, error, 'CartrackPlugin', 'requestPermissions');
     }
 
 };

@@ -1,215 +1,445 @@
-package com.outsystems.experts.cartrack;
+/*
+       Licensed to the Apache Software Foundation (ASF) under one
+       or more contributor license agreements.  See the NOTICE file
+       distributed with this work for additional information
+       regarding copyright ownership.  The ASF licenses this file
+       to you under the Apache License, Version 2.0 (the
+       "License"); you may not use this file except in compliance
+       with the License.  You may obtain a copy of the License at
 
-import android.util.Log;
+         http://www.apache.org/licenses/LICENSE-2.0
 
-import com.cartrack.blesdk.ctg.BleListener;
-import com.cartrack.blesdk.ctg.BleService;
-import com.cartrack.blesdk.ctg.BleTerminal;
-import com.cartrack.blesdk.enumerations.BleAction;
-import com.cartrack.blesdk.enumerations.BleError;
-import com.cartrack.blesdk.enumerations.BleSignalStrength;
-import com.cartrack.blesdk.enumerations.GetVehicleStats;
-import com.cartrack.blesdk.enumerations.GetVehicleStatus;
+       Unless required by applicable law or agreed to in writing,
+       software distributed under the License is distributed on an
+       "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+       KIND, either express or implied.  See the License for the
+       specific language governing permissions and limitations
+       under the License.
+*/
+package org.apache.cordova;
 
-import org.apache.cordova.CordovaPlugin;
+import org.apache.cordova.CordovaArgs;
+import org.apache.cordova.CordovaWebView;
+import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CallbackContext;
-
-import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.res.Configuration;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Bundle;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
 
 /**
- * This class echoes a string called from JavaScript.
+ * Plugins must extend this class and override one of the execute methods.
  */
+public class CordovaPlugin {
+    public CordovaWebView webView;
+    public CordovaInterface cordova;
+    protected CordovaPreferences preferences;
+    private String serviceName;
 
-
-public class CartrackPlugin extends CordovaPlugin implements BleListener {
-
-    BleTerminal BleTerminal;
-    HashMap<CallbackTypes, CallbackContext> CallbackContextList = new HashMap<CallbackTypes, CallbackContext>();
-    String TAG = "CartrackPlugin";
-
-    enum CallbackTypes{
-        SAVE_AUTH_KEY,
-        GET_AUTH_KEY,
-        SCAN_AND_CONNECT_TO_PERIPHERAL,
-        DISCONNECT,
-        REMOVE_AUTH_KEY,
-        SEND_ACTION,
-        ON_SIGNAL_STRENGTH,
-        ON_ERROR
+    /**
+     * Call this after constructing to initialize the plugin.
+     * Final because we want to be able to change args without breaking plugins.
+     */
+    public final void privateInitialize(String serviceName, CordovaInterface cordova, CordovaWebView webView, CordovaPreferences preferences) {
+        assert this.cordova == null;
+        this.serviceName = serviceName;
+        this.cordova = cordova;
+        this.webView = webView;
+        this.preferences = preferences;
+        initialize(cordova, webView);
+        pluginInitialize();
     }
 
-    @Override
+    /**
+     * Called after plugin construction and fields have been initialized.
+     * Prefer to use pluginInitialize instead since there is no value in
+     * having parameters on the initialize() function.
+     */
+    public void initialize(CordovaInterface cordova, CordovaWebView webView) {
+    }
+
+    /**
+     * Called after plugin construction and fields have been initialized.
+     */
+    protected void pluginInitialize() {
+    }
+
+    /**
+     * Returns the plugin's service name (what you'd use when calling pluginManger.getPlugin())
+     */
+    public String getServiceName() {
+        return serviceName;
+    }
+
+    /**
+     * Executes the request.
+     *
+     * This method is called from the WebView thread. To do a non-trivial amount of work, use:
+     *     cordova.getThreadPool().execute(runnable);
+     *
+     * To run on the UI thread, use:
+     *     cordova.getActivity().runOnUiThread(runnable);
+     *
+     * @param action          The action to execute.
+     * @param rawArgs         The exec() arguments in JSON form.
+     * @param callbackContext The callback context used when calling back into JavaScript.
+     * @return                Whether the action was valid.
+     */
+    public boolean execute(String action, String rawArgs, CallbackContext callbackContext) throws JSONException {
+        JSONArray args = new JSONArray(rawArgs);
+        return execute(action, args, callbackContext);
+    }
+
+    /**
+     * Executes the request.
+     *
+     * This method is called from the WebView thread. To do a non-trivial amount of work, use:
+     *     cordova.getThreadPool().execute(runnable);
+     *
+     * To run on the UI thread, use:
+     *     cordova.getActivity().runOnUiThread(runnable);
+     *
+     * @param action          The action to execute.
+     * @param args            The exec() arguments.
+     * @param callbackContext The callback context used when calling back into JavaScript.
+     * @return                Whether the action was valid.
+     */
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
-        switch (action) {
-            case "configure":
-                String terminalId = args.getString(0);
-                this.configure(terminalId, callbackContext);
-                return true;
-            case "saveAuthKey":
-                String authKey = args.getString(0);
-                this.saveAuthKey(authKey, callbackContext);
-                return true;
-            case "getAuthKey":
-                this.getAuthKey(callbackContext);
-                return true;
-            case "scanAndConnectToPeripheral":
-                long timeoutSeconds = args.getLong(0);
-                this.scanAndConnectToPeripheral(timeoutSeconds, callbackContext);
-                return true;
-            case "disconnect":
-                this.disconnect(callbackContext);
-                return true;
-            case "removeAuthKey":
-                this.removeAuthKey(callbackContext);
-                return true;
-            case "sendAction":
-                String bleActionStr = args.getString(0);
-                this.sendAction(bleActionStr, callbackContext);
-                return true;
-            case "onSignalStrength":
-                this.onSignalStrength(callbackContext);
-                return true;
-            case "initErrorHandler":
-                this.initErrorHandler(callbackContext);
-                return true;
-        }
+        CordovaArgs cordovaArgs = new CordovaArgs(args);
+        return execute(action, cordovaArgs, callbackContext);
+    }
+
+    /**
+     * Executes the request.
+     *
+     * This method is called from the WebView thread. To do a non-trivial amount of work, use:
+     *     cordova.getThreadPool().execute(runnable);
+     *
+     * To run on the UI thread, use:
+     *     cordova.getActivity().runOnUiThread(runnable);
+     *
+     * @param action          The action to execute.
+     * @param args            The exec() arguments, wrapped with some Cordova helpers.
+     * @param callbackContext The callback context used when calling back into JavaScript.
+     * @return                Whether the action was valid.
+     */
+    public boolean execute(String action, CordovaArgs args, CallbackContext callbackContext) throws JSONException {
         return false;
     }
 
-    private void configure(String terminalID, CallbackContext callbackContext) {
-        BleService.Companion.configure(this.cordova.getContext());
-        BleTerminal = BleService.Companion.getTerminal(terminalID);
-        BleTerminal.setBleListener(this);
-        callbackContext.success();
+    /**
+     * Called when the system is about to start resuming a previous activity.
+     *
+     * @param multitasking		Flag indicating if multitasking is turned on for app
+     */
+    public void onPause(boolean multitasking) {
     }
 
-    private void saveAuthKey(String authKey, CallbackContext callbackContext) {
-        CallbackContextList.put(CallbackTypes.SAVE_AUTH_KEY, callbackContext);
-        BleTerminal.saveAuthKey(authKey);
+    /**
+     * Called when the activity will start interacting with the user.
+     *
+     * @param multitasking		Flag indicating if multitasking is turned on for app
+     */
+    public void onResume(boolean multitasking) {
     }
 
-    private void getAuthKey(CallbackContext callbackContext) {
-        CallbackContextList.put(CallbackTypes.GET_AUTH_KEY, callbackContext);
-        String authKey = BleTerminal.getAuthKey();
-        callbackContext.success(authKey);
+    /**
+     * Called when the activity is becoming visible to the user.
+     */
+    public void onStart() {
     }
 
-    private void scanAndConnectToPeripheral(long timeoutSeconds, CallbackContext callbackContext){
-        CallbackContextList.put(CallbackTypes.SCAN_AND_CONNECT_TO_PERIPHERAL, callbackContext);
-        BleTerminal.scanAndConnectToPeripheral(timeoutSeconds);
+    /**
+     * Called when the activity is no longer visible to the user.
+     */
+    public void onStop() {
     }
 
-    private void disconnect(CallbackContext callbackContext){
-        CallbackContextList.put(CallbackTypes.DISCONNECT, callbackContext);
-        BleTerminal.disconnect();
+    /**
+     * Called when the activity receives a new intent.
+     */
+    public void onNewIntent(Intent intent) {
     }
 
-    private void removeAuthKey(CallbackContext callbackContext){
-        CallbackContextList.put(CallbackTypes.REMOVE_AUTH_KEY, callbackContext);
-        BleTerminal.removeAuthKey();
+    /**
+     * The final call you receive before your activity is destroyed.
+     */
+    public void onDestroy() {
     }
 
-    private void sendAction(String bleActionStr, CallbackContext callbackContext){
-        try {
-            CallbackContextList.put(CallbackTypes.SEND_ACTION, callbackContext);
-            BleAction bleAction = BleAction.valueOf(bleActionStr);
-            BleTerminal.sendAction(bleAction);
-        } catch (Exception e) {
-            callbackContext.error(e.getMessage());
-        }
+    /**
+     * Called when the Activity is being destroyed (e.g. if a plugin calls out to an external
+     * Activity and the OS kills the CordovaActivity in the background). The plugin should save its
+     * state in this method only if it is awaiting the result of an external Activity and needs
+     * to preserve some information so as to handle that result; onRestoreStateForActivityResult()
+     * will only be called if the plugin is the recipient of an Activity result
+     *
+     * @return  Bundle containing the state of the plugin or null if state does not need to be saved
+     */
+    public Bundle onSaveInstanceState() {
+        return null;
     }
 
-    private void onSignalStrength(CallbackContext callbackContext){
-        Log.e(TAG, "onSignalStrength");
+    /**
+     * Called when a plugin is the recipient of an Activity result after the CordovaActivity has
+     * been destroyed. The Bundle will be the same as the one the plugin returned in
+     * onSaveInstanceState()
+     *
+     * @param state             Bundle containing the state of the plugin
+     * @param callbackContext   Replacement Context to return the plugin result to
+     */
+    public void onRestoreStateForActivityResult(Bundle state, CallbackContext callbackContext) {}
+
+    /**
+     * Called when a message is sent to plugin.
+     *
+     * @param id            The message id
+     * @param data          The message data
+     * @return              Object to stop propagation or null
+     */
+    public Object onMessage(String id, Object data) {
+        return null;
     }
 
-    private void initErrorHandler(CallbackContext callbackContext){
-        CallbackContextList.put(CallbackTypes.ON_ERROR, callbackContext);
-        PluginResult result = new PluginResult(PluginResult.Status.OK);
-        result.getKeepCallback();
+    /**
+     * Called when an activity you launched exits, giving you the requestCode you started it with,
+     * the resultCode it returned, and any additional data from it.
+     *
+     * @param requestCode   The request code originally supplied to startActivityForResult(),
+     *                      allowing you to identify who this result came from.
+     * @param resultCode    The integer result code returned by the child activity through its setResult().
+     * @param intent        An Intent, which can return result data to the caller (various data can be
+     *                      attached to Intent "extras").
+     */
+    public void onActivityResult(int requestCode, int resultCode, Intent intent) {
     }
 
-    @Override
-    public void onError(BleError bleError) {
-
-        CallbackContext callbackContext = CallbackContextList.get(CallbackTypes.ON_ERROR);
-
-        JSONObject errorResponse = this.createJsonErrorResponse(bleError.getClass().getName(), bleError.getLocalizedDescription());
-
-        PluginResult result = new PluginResult(PluginResult.Status.OK, errorResponse);
-        result.getKeepCallback();
-
-        Log.e(TAG, bleError.getLocalizedDescription());
-
-        callbackContext.sendPluginResult(result);
+    /**
+     * Hook for blocking the loading of external resources.
+     *
+     * This will be called when the WebView's shouldInterceptRequest wants to
+     * know whether to open a connection to an external resource. Return false
+     * to block the request: if any plugin returns false, Cordova will block
+     * the request. If all plugins return null, the default policy will be
+     * enforced. If at least one plugin returns true, and no plugins return
+     * false, then the request will proceed.
+     *
+     * Note that this only affects resource requests which are routed through
+     * WebViewClient.shouldInterceptRequest, such as XMLHttpRequest requests and
+     * img tag loads. WebSockets and media requests (such as <video> and <audio>
+     * tags) are not affected by this method. Use CSP headers to control access
+     * to such resources.
+     */
+    public Boolean shouldAllowRequest(String url) {
+        return null;
     }
 
-    private JSONObject createJsonErrorResponse(String code, String message) {
-        Map<String, String> data = new HashMap<>();
-        data.put("code", code);
-        data.put("message", message);
-        return new JSONObject(data);
+    /**
+     * Hook for blocking navigation by the Cordova WebView. This applies both to top-level and
+     * iframe navigations.
+     *
+     * This will be called when the WebView's needs to know whether to navigate
+     * to a new page. Return false to block the navigation: if any plugin
+     * returns false, Cordova will block the navigation. If all plugins return
+     * null, the default policy will be enforced. It at least one plugin returns
+     * true, and no plugins return false, then the navigation will proceed.
+     */
+    public Boolean shouldAllowNavigation(String url) {
+        return null;
     }
 
-    @Override
-    public void onRemoveAuthKeySuccess() {
-        CallbackContext callbackContext = CallbackContextList.get(CallbackTypes.REMOVE_AUTH_KEY);
-        callbackContext.success();
-
-        CallbackContextList.remove(CallbackTypes.REMOVE_AUTH_KEY);
+    /**
+     * Hook for allowing page to call exec(). By default, this returns the result of
+     * shouldAllowNavigation(). It's generally unsafe to allow untrusted content to be loaded
+     * into a CordovaWebView, even within an iframe, so it's best not to touch this.
+     */
+    public Boolean shouldAllowBridgeAccess(String url) {
+        return shouldAllowNavigation(url);
     }
 
-    @Override
-    public void onSaveAuthKeySuccess(BleTerminal bleTerminal, String s) {
-        CallbackContext callbackContext = CallbackContextList.get(CallbackTypes.SAVE_AUTH_KEY);
-        callbackContext.success();
-
-        CallbackContextList.remove(CallbackTypes.SAVE_AUTH_KEY);
+    /**
+     * Hook for blocking the launching of Intents by the Cordova application.
+     *
+     * This will be called when the WebView will not navigate to a page, but
+     * could launch an intent to handle the URL. Return false to block this: if
+     * any plugin returns false, Cordova will block the navigation. If all
+     * plugins return null, the default policy will be enforced. If at least one
+     * plugin returns true, and no plugins return false, then the URL will be
+     * opened.
+     */
+    public Boolean shouldOpenExternalUrl(String url) {
+        return null;
     }
 
-    @Override
-    public void onSignalStrength(BleSignalStrength bleSignalStrength) {
-        CallbackContext callbackContext = CallbackContextList.get(CallbackTypes.ON_SIGNAL_STRENGTH);
-        callbackContext.success();
-
-        CallbackContextList.remove(CallbackTypes.ON_SIGNAL_STRENGTH);
+    /**
+     * Allows plugins to handle a link being clicked. Return true here to cancel the navigation.
+     *
+     * @param url           The URL that is trying to be loaded in the Cordova webview.
+     * @return              Return true to prevent the URL from loading. Default is false.
+     */
+    public boolean onOverrideUrlLoading(String url) {
+        return false;
     }
 
-    @Override
-    public void onTerminalCommandResult(BleAction bleAction) {
-        Log.e(TAG, "onTerminalCommandResult");
+    /**
+     * Hook for redirecting requests. Applies to WebView requests as well as requests made by plugins.
+     * To handle the request directly, return a URI in the form:
+     *
+     *    cdvplugin://pluginId/...
+     *
+     * And implement handleOpenForRead().
+     * To make this easier, use the toPluginUri() and fromPluginUri() helpers:
+     *
+     *     public Uri remapUri(Uri uri) { return toPluginUri(uri); }
+     *
+     *     public CordovaResourceApi.OpenForReadResult handleOpenForRead(Uri uri) throws IOException {
+     *         Uri origUri = fromPluginUri(uri);
+     *         ...
+     *     }
+     */
+    public Uri remapUri(Uri uri) {
+        return null;
     }
 
-    @Override
-    public void onTerminalConnected(BleTerminal bleTerminal) {
-        CallbackContext callbackContext = CallbackContextList.get(CallbackTypes.SCAN_AND_CONNECT_TO_PERIPHERAL);
-        callbackContext.success();
-
-        CallbackContextList.remove(CallbackTypes.SCAN_AND_CONNECT_TO_PERIPHERAL);
+    /**
+     * Called to handle CordovaResourceApi.openForRead() calls for a cdvplugin://pluginId/ URL.
+     * Should never return null.
+     * Added in cordova-android@4.0.0
+     */
+    public CordovaResourceApi.OpenForReadResult handleOpenForRead(Uri uri) throws IOException {
+        throw new FileNotFoundException("Plugin can't handle uri: " + uri);
     }
 
-    @Override
-    public void onTerminalDidGetVehicleStats(byte b, GetVehicleStats getVehicleStats) {
-        Log.e(TAG, "onTerminalDidGetVehicleStats");
+    /**
+     * Refer to remapUri()
+     * Added in cordova-android@4.0.0
+     */
+    protected Uri toPluginUri(Uri origUri) {
+        return new Uri.Builder()
+            .scheme(CordovaResourceApi.PLUGIN_URI_SCHEME)
+            .authority(serviceName)
+            .appendQueryParameter("origUri", origUri.toString())
+            .build();
     }
 
-    @Override
-    public void onTerminalDidGetVehicleStatus(byte b, GetVehicleStatus getVehicleStatus) {
-        Log.e(TAG, "onTerminalDidGetVehicleStatus");
+    /**
+     * Refer to remapUri()
+     * Added in cordova-android@4.0.0
+     */
+    protected Uri fromPluginUri(Uri pluginUri) {
+        return Uri.parse(pluginUri.getQueryParameter("origUri"));
     }
 
-    @Override
-    public void onTerminalDisconnected(BleTerminal bleTerminal) {
-        CallbackContext callbackContext = CallbackContextList.get(CallbackTypes.DISCONNECT);
-        callbackContext.success();
+    /**
+     * Called when the WebView does a top-level navigation or refreshes.
+     *
+     * Plugins should stop any long-running processes and clean up internal state.
+     *
+     * Does nothing by default.
+     */
+    public void onReset() {
+    }
 
-        CallbackContextList.remove(CallbackTypes.DISCONNECT);
+    /**
+     * Called when the system received an HTTP authentication request. Plugin can use
+     * the supplied HttpAuthHandler to process this auth challenge.
+     *
+     * @param view              The WebView that is initiating the callback
+     * @param handler           The HttpAuthHandler used to set the WebView's response
+     * @param host              The host requiring authentication
+     * @param realm             The realm for which authentication is required
+     *
+     * @return                  Returns True if plugin will resolve this auth challenge, otherwise False
+     *
+     */
+    public boolean onReceivedHttpAuthRequest(CordovaWebView view, ICordovaHttpAuthHandler handler, String host, String realm) {
+        return false;
+    }
+
+    /**
+     * Called when he system received an SSL client certificate request.  Plugin can use
+     * the supplied ClientCertRequest to process this certificate challenge.
+     *
+     * @param view              The WebView that is initiating the callback
+     * @param request           The client certificate request
+     *
+     * @return                  Returns True if plugin will resolve this auth challenge, otherwise False
+     *
+     */
+    public boolean onReceivedClientCertRequest(CordovaWebView view, ICordovaClientCertRequest request) {
+        return false;
+    }
+
+    /**
+     * Called by the system when the device configuration changes while your activity is running.
+     *
+     * @param newConfig		The new device configuration
+     */
+    public void onConfigurationChanged(Configuration newConfig) {
+    }
+
+    /**
+     * Called by the Plugin Manager when we need to actually request permissions
+     *
+     * @param requestCode   Passed to the activity to track the request
+     *
+     * @return              Returns the permission that was stored in the plugin
+     */
+
+    public void requestPermissions(int requestCode) {
+    }
+
+    /*
+     * Called by the WebView implementation to check for geolocation permissions, can be used
+     * by other Java methods in the event that a plugin is using this as a dependency.
+     *
+     * @return          Returns true if the plugin has all the permissions it needs to operate.
+     */
+
+    public boolean hasPermisssion() {
+        return true;
+    }
+
+    /**
+     * Called by the system when the user grants permissions
+     *
+     * @param requestCode
+     * @param permissions
+     * @param grantResults
+     * 
+     * @deprecated Use {@link #onRequestPermissionsResult} instead.
+     */
+    @Deprecated
+    public void onRequestPermissionResult(int requestCode, String[] permissions,
+                                          int[] grantResults) throws JSONException {
+
+    }
+
+    /**
+     * Called by the system when the user grants permissions
+     *
+     * @param requestCode
+     * @param permissions
+     * @param grantResults
+     */
+    public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                                          int[] grantResults) throws JSONException {
+
+    }
+
+    /**
+     * Allow plugins to supply a PathHandler for the WebViewAssetHandler
+     * @return a CordovaPluginPathHandler which listen for paths and returns a response
+     */
+    public CordovaPluginPathHandler getPathHandler() {
+        return null;
     }
 }
