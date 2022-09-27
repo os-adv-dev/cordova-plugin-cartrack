@@ -149,8 +149,7 @@ public class CartrackPlugin extends CordovaPlugin implements BleListener {
 
     private void initErrorHandler(CallbackContext callbackContext){
         CallbackContextList.put(CallbackTypes.ON_ERROR, callbackContext);
-        PluginResult result = new PluginResult(PluginResult.Status.OK);
-        result.getKeepCallback();
+        callbackContext.success();
     }
 
     private void requestPermissions(CallbackContext callbackContext){
@@ -170,7 +169,7 @@ public class CartrackPlugin extends CordovaPlugin implements BleListener {
         JSONObject errorResponse = this.createJsonErrorResponse(bleError.getClass().getName(), bleError.getLocalizedDescription());
 
         PluginResult result = new PluginResult(PluginResult.Status.OK, errorResponse);
-        result.getKeepCallback();
+        result.setKeepCallback(true);
 
         Log.e(TAG, bleError.getLocalizedDescription());
 
