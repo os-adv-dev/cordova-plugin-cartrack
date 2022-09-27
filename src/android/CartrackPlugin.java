@@ -149,7 +149,6 @@ public class CartrackPlugin extends CordovaPlugin implements BleListener {
 
     private void initErrorHandler(CallbackContext callbackContext){
         CallbackContextList.put(CallbackTypes.ON_ERROR, callbackContext);
-        callbackContext.success();
     }
 
     private void requestPermissions(CallbackContext callbackContext){
