@@ -90,6 +90,9 @@ public class CartrackPlugin extends CordovaPlugin implements BleListener {
             case "requestPermissions":
                 this.requestPermissions(callbackContext);
                 return true;
+            case "getLockState":
+                this.getLockState(callbackContext);
+                return true;
         }
         return false;
     }
@@ -166,6 +169,14 @@ public class CartrackPlugin extends CordovaPlugin implements BleListener {
             callbackContext.success();
         } else {
             PermissionHelper.requestPermissions(this, START_REQ_CODE, permissions);
+        }
+    }
+
+    private void getLockState(CallbackContext callbackContext){
+        if (BleService.Companion.isConfigured()) {
+            callbackContext.success(BleTerminal.getLockState().toString());
+        } else {
+            callbackContext.error("Please configure BLE terminal");
         }
     }
 

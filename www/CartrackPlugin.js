@@ -27,6 +27,9 @@ module.exports = {
     },
     requestPermissions: function (success, error) {
         exec(success, error, 'CartrackPlugin', 'requestPermissions');
+    },
+    getLockState: function (success, error) {
+        exec(success, error, 'CartrackPlugin', 'getLockState');
     }
 
 };
