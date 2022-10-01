@@ -232,9 +232,13 @@ public class CartrackPlugin extends CordovaPlugin implements BleListener {
     }
 
     @Override
-    //TODO?
-    public void onTerminalDidGetVehicleStats(byte b, GetVehicleStats getVehicleStats) {
-
+    public void onTerminalDidGetVehicleStats(byte b, GetVehicleStats vehicleStats) {
+        CallbackContext callbackContext = CallbackContextList.get(CallbackTypes.SEND_ACTION);
+        if (callbackContext != null) {
+            Gson gson = new Gson();
+            String vehicleStatusJson = gson.toJson(vehicleStats);
+            callbackContext.success(vehicleStatusJson);
+        }
     }
 
     @Override
