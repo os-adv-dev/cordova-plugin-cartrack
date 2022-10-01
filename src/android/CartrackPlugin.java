@@ -47,7 +47,6 @@ public class CartrackPlugin extends CordovaPlugin implements BleListener {
 
     enum CallbackTypes{
         SAVE_AUTH_KEY,
-        GET_AUTH_KEY,
         SCAN_AND_CONNECT_TO_PERIPHERAL,
         DISCONNECT,
         REMOVE_AUTH_KEY,
@@ -106,31 +105,48 @@ public class CartrackPlugin extends CordovaPlugin implements BleListener {
     }
 
     private void saveAuthKey(String authKey, CallbackContext callbackContext) {
-        CallbackContextList.put(CallbackTypes.SAVE_AUTH_KEY, callbackContext);
-        BleTerminal.saveAuthKey(authKey);
+        if (BleService.Companion.isConfigured()) {
+            CallbackContextList.put(CallbackTypes.SAVE_AUTH_KEY, callbackContext);
+            BleTerminal.saveAuthKey(authKey);
+        } else {
+            callbackContext.error("Please configure BLE terminal");
+        }
     }
 
     private void getAuthKey(CallbackContext callbackContext) {
-        CallbackContextList.put(CallbackTypes.GET_AUTH_KEY, callbackContext);
-        String authKey = BleTerminal.getAuthKey();
-        if (callbackContext != null) {
+        if (BleService.Companion.isConfigured()) {
+            String authKey = BleTerminal.getAuthKey();
             callbackContext.success(authKey);
+        } else {
+            callbackContext.error("Please configure BLE terminal");
         }
     }
 
     private void scanAndConnectToPeripheral(long timeoutSeconds, CallbackContext callbackContext){
-        CallbackContextList.put(CallbackTypes.SCAN_AND_CONNECT_TO_PERIPHERAL, callbackContext);
-        BleTerminal.scanAndConnectToPeripheral(timeoutSeconds);
+        if (BleService.Companion.isConfigured()) {
+            CallbackContextList.put(CallbackTypes.SCAN_AND_CONNECT_TO_PERIPHERAL, callbackContext);
+            BleTerminal.scanAndConnectToPeripheral(timeoutSeconds * 1000);
+        } else {
+            callbackContext.error("Please configure BLE terminal");
+        }
     }
 
     private void disconnect(CallbackContext callbackContext){
-        CallbackContextList.put(CallbackTypes.DISCONNECT, callbackContext);
-        BleTerminal.disconnect();
+        if (BleService.Companion.isConfigured()) {
+            CallbackContextList.put(CallbackTypes.DISCONNECT, callbackContext);
+            BleTerminal.disconnect();
+        } else {
+            callbackContext.error("Please configure BLE terminal");
+        }
     }
 
     private void removeAuthKey(CallbackContext callbackContext){
-        CallbackContextList.put(CallbackTypes.REMOVE_AUTH_KEY, callbackContext);
-        BleTerminal.removeAuthKey();
+        if (BleService.Companion.isConfigured()) {
+            CallbackContextList.put(CallbackTypes.REMOVE_AUTH_KEY, callbackContext);
+            BleTerminal.removeAuthKey();
+        } else {
+            callbackContext.error("Please configure BLE terminal");
+        }
     }
 
     private void sendAction(String bleActionStr, CallbackContext callbackContext){
@@ -165,14 +181,16 @@ public class CartrackPlugin extends CordovaPlugin implements BleListener {
 
         CallbackContext callbackContext = CallbackContextList.get(CallbackTypes.ON_ERROR);
 
-        JSONObject errorResponse = this.createJsonErrorResponse(bleError.getClass().getName(), bleError.getLocalizedDescription());
+        if (callbackContext != null) {
+            JSONObject errorResponse = this.createJsonErrorResponse(bleError.getClass().getName(), bleError.getLocalizedDescription());
 
-        PluginResult result = new PluginResult(PluginResult.Status.OK, errorResponse);
-        result.setKeepCallback(true);
+            PluginResult result = new PluginResult(PluginResult.Status.OK, errorResponse);
+            result.setKeepCallback(true);
 
-        Log.e(TAG, bleError.getLocalizedDescription());
+            Log.e(TAG, bleError.getLocalizedDescription());
 
-        callbackContext.sendPluginResult(result);
+            callbackContext.sendPluginResult(result);
+        }
     }
 
     private JSONObject createJsonErrorResponse(String code, String message) {
