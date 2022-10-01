@@ -230,7 +230,11 @@ public class CartrackPlugin extends CordovaPlugin implements BleListener {
 
     @Override
     public void onTerminalCommandResult(BleAction bleAction) {
-        Log.e(TAG, "onTerminalCommandResult");
+        CallbackContext callbackContext = CallbackContextList.get(CallbackTypes.SEND_ACTION);
+        if (callbackContext != null) {
+            callbackContext.success();
+            CallbackContextList.remove(CallbackTypes.SEND_ACTION);
+        }
     }
 
     @Override
