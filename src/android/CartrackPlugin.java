@@ -12,6 +12,7 @@ import com.cartrack.blesdk.enumerations.BleError;
 import com.cartrack.blesdk.enumerations.BleSignalStrength;
 import com.cartrack.blesdk.enumerations.GetVehicleStats;
 import com.cartrack.blesdk.enumerations.GetVehicleStatus;
+import com.google.gson.Gson;
 
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CallbackContext;
@@ -51,7 +52,6 @@ public class CartrackPlugin extends CordovaPlugin implements BleListener {
         DISCONNECT,
         REMOVE_AUTH_KEY,
         SEND_ACTION,
-        ON_SIGNAL_STRENGTH,
         ON_ERROR,
         REQUEST_PERMISSIONS
     }
@@ -83,9 +83,6 @@ public class CartrackPlugin extends CordovaPlugin implements BleListener {
             case "sendAction":
                 String bleActionStr = args.getString(0);
                 this.sendAction(bleActionStr, callbackContext);
-                return true;
-            case "onSignalStrength":
-                this.onSignalStrength(callbackContext);
                 return true;
             case "initErrorHandler":
                 this.initErrorHandler(callbackContext);
@@ -159,10 +156,6 @@ public class CartrackPlugin extends CordovaPlugin implements BleListener {
         }
     }
 
-    private void onSignalStrength(CallbackContext callbackContext){
-        Log.e(TAG, "onSignalStrength");
-    }
-
     private void initErrorHandler(CallbackContext callbackContext){
         CallbackContextList.put(CallbackTypes.ON_ERROR, callbackContext);
     }
@@ -219,12 +212,9 @@ public class CartrackPlugin extends CordovaPlugin implements BleListener {
     }
 
     @Override
+    //TODO?
     public void onSignalStrength(BleSignalStrength bleSignalStrength) {
-        CallbackContext callbackContext = CallbackContextList.get(CallbackTypes.ON_SIGNAL_STRENGTH);
-        if (callbackContext != null) {
-            callbackContext.success();
-            CallbackContextList.remove(CallbackTypes.ON_SIGNAL_STRENGTH);
-        }
+
     }
 
     @Override
@@ -242,13 +232,19 @@ public class CartrackPlugin extends CordovaPlugin implements BleListener {
     }
 
     @Override
+    //TODO?
     public void onTerminalDidGetVehicleStats(byte b, GetVehicleStats getVehicleStats) {
-        Log.e(TAG, "onTerminalDidGetVehicleStats");
+
     }
 
     @Override
-    public void onTerminalDidGetVehicleStatus(byte b, GetVehicleStatus getVehicleStatus) {
-        Log.e(TAG, "onTerminalDidGetVehicleStatus");
+    public void onTerminalDidGetVehicleStatus(byte b, GetVehicleStatus vehicleStatus) {
+        CallbackContext callbackContext = CallbackContextList.get(CallbackTypes.SEND_ACTION);
+        if (callbackContext != null) {
+            Gson gson = new Gson();
+            String vehicleStatusJson = gson.toJson(vehicleStatus);
+            callbackContext.success(vehicleStatusJson);
+        }
     }
 
     @Override

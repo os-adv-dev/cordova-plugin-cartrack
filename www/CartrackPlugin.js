@@ -22,9 +22,6 @@ module.exports = {
     sendAction: function (actionId, success, error) {
         exec(success, error, 'CartrackPlugin', 'sendAction', [actionId]);
     },
-    onSignalStrength: function (success, error) {
-        exec(success, error, 'CartrackPlugin', 'onSignalStrength');
-    },
     initErrorHandler: function (success, error) {
         exec(success, error, 'CartrackPlugin', 'initErrorHandler');
     },
