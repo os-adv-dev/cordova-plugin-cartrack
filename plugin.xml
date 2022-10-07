@@ -58,7 +58,7 @@
 
         <!-- iOS Source Files -->
         <framework src="src/ios/framework/CartrackBleLockSDK.xcframework" embed="true" custom="true" />
-        <header-file src="src/ios/CartrackPlugin.swift" />
+        <source-file src="src/ios/CartrackPlugin.swift" />
 
 
         <!-- Bluetooth Permissions -->
