@@ -8,46 +8,60 @@ import CoreBluetooth
 import CartrackBleLockSDK
 import Foundation
 
-class CartrackPlugin {
-    
+@objc(CartrackPlugin)
+class CartrackPlugin: CDVPlugin {
+    var pluginResult = CDVPluginResult()
+    var pluginCommand = CDVInvokedUrlCommand()
     var bleTerminal: BleTerminal?
-    var callbackCommandDict:[CallbackTypes:CDVInvokedUrlCommand] = []
-    
+    var callbackCommandDict:[CallbackTypes:CDVInvokedUrlCommand] = [:]
     
     @objc (configure:)
-    func configure(_ command: CDVInvokedUrlCommand, terminalId: String) {
-        bleTerminal = BleService.getTerminal(terminalID: terminalId)
-        bleTerminal?.delegate = self
+    func configure(_ command: CDVInvokedUrlCommand) {
         
-        UserDefaults.standard.set(terminalId, forKey: "terminal_id")
-        
-        print("Set Terminal ID successful")
+        if let terminalId = command.arguments[0] as? String {
+            bleTerminal = BleService.getTerminal(terminalID: terminalId)
+            bleTerminal?.delegate = self
+            
+            UserDefaults.standard.set(terminalId, forKey: "terminal_id")
+            
+            print("Set Terminal ID successful")
+        }
     }
     
     @objc (saveAuthKey:)
-    func saveAuthKey(authKey: String) {
-        bleTerminal?.saveAuthKey(authKey: authKey)
-        print("AuthKey saved")
+    func saveAuthKey(_ command: CDVInvokedUrlCommand) {
+        pluginCommand = command
+        if let authKey = command.arguments[0] as? String {
+            bleTerminal?.saveAuthKey(authKey: authKey)
+            print("AuthKey saved")
+        }
     }
     
     @objc (getAuthKey:)
-    func getAuthKey() {
-        print(bleTerminal?.authKey)
+    func getAuthKey(_ command: CDVInvokedUrlCommand) {
+        pluginCommand = command
+        if let authKey = bleTerminal?.authKey {
+            print("AuthKey fetched: \(authKey)")
+            sendPluginResult(status: CDVCommandStatus_OK, message: authKey)
+        }
     }
     
     @objc (scanAndConnectToPeripheral:)
-    func scanAndConnectToPeripheral(timeoutSeconds: Int) {
-        print("Connecting...")
-        bleTerminal?.connect()
+    func scanAndConnectToPeripheral(_ command: CDVInvokedUrlCommand) {
+        pluginCommand = command
+//        if let timeoutSeconds = command.arguments[0] as? Int {
+            print("Connecting...")
+            bleTerminal?.connect()
+//        }
     }
     
-    @objc (disconnect:)
+    @objc (disconnect)
     func disconnect() {
         print("Disconnecting...")
         bleTerminal?.disconnect()
     }
     
-    @objc (removeAuthKey:)
+    @objc (removeAuthKey)
     func removeAuthKey() {
         bleTerminal?.removeAuthKey()
         if bleTerminal?.hasKey ?? false {
@@ -58,43 +72,55 @@ class CartrackPlugin {
     }
     
     @objc (sendAction:)
-    func sendAction(bleActionString: String) {
-        switch bleActionString {
-        case "LOCK":
-            bleTerminal?.sendAction(.lock)
-        case "UNLOCK":
-            bleTerminal?.sendAction(.unlock)
-        case "HORN":
-            bleTerminal?.sendAction(.horn)
-        case "GET_LOCK_STATE":
-            bleTerminal?.sendAction(.lockState)
-        case "HEADLIGHT":
-            bleTerminal?.sendAction(.headlight)
-        case "UNLOCK_NOKEYFOB":
-            bleTerminal?.sendAction(.unlockNoKeyFob)
-        //case "VEHICLE_GET_CONFIG":      //ANDROID ONLY?
-        case "IGNITION_STATE":
-            bleTerminal?.sendAction(.ignitionState)
-        case "VEHICLE_GET_STATUS":
-            bleTerminal?.getVehicleStats()
-        default:
-            print("Action not available on iOS")
+    func sendAction(_ command: CDVInvokedUrlCommand) {
+        if let bleActionString = command.arguments[0] as? String {
+            switch bleActionString {
+            case "LOCK":
+                bleTerminal?.sendAction(.lock)
+            case "UNLOCK":
+                bleTerminal?.sendAction(.unlock)
+            case "HORN":
+                bleTerminal?.sendAction(.horn)
+            case "GET_LOCK_STATE":
+                bleTerminal?.sendAction(.lockState)
+            case "HEADLIGHT":
+                bleTerminal?.sendAction(.headlight)
+            case "UNLOCK_NOKEYFOB":
+                bleTerminal?.sendAction(.unlockNoKeyFob)
+            //case "VEHICLE_GET_CONFIG":      //ANDROID ONLY?
+            case "IGNITION_STATE":
+                bleTerminal?.sendAction(.ignitionState)
+            case "VEHICLE_GET_STATUS":
+                bleTerminal?.getVehicleStats()
+            default:
+                print("Action not available on iOS")
+            }
         }
     }
     
-    @objc (initErrorHandler:)
+    @objc (initErrorHandler)
     func initErrorHandler() {
         //???
     }
     
     @objc (requestPermissions:)
-    func requestPermissions() {
+    func requestPermissions(_ command: CDVInvokedUrlCommand) {
+        print("Permission request")
         //???
     }
     
     @objc (getLockState:)
-    func getLockState() {
-        bleTerminal?.sendAction(.lockState)
+    func getLockState(_ command: CDVInvokedUrlCommand) {
+        pluginCommand = command
+        let lockState: LockState = bleTerminal?.lockState ?? .unknown
+        switch lockState {
+        case .locked:
+            sendPluginResult(status: CDVCommandStatus_OK, message: "locked")
+        case .unlocked:
+            sendPluginResult(status: CDVCommandStatus_OK, message: "unlocked")
+        default:
+            sendPluginResult(status: CDVCommandStatus_OK, message: "unknown")
+        }
     }
     
     func sendPluginResult(status: CDVCommandStatus, message: String) {
@@ -110,12 +136,15 @@ extension CartrackPlugin: BleTerminalDelegate {
           print("Save Key Failed, message: \(error.errorCode) \(error.localizedDescription)")
         } else {
           print("Save Key Successful, Successful save authentication key!")
+            sendPluginResult(status: CDVCommandStatus_OK, message: "OK")
         }
     }
     
     func bleTerminalDidConnect(terminal: BleTerminal, error: BleError?) {
         if let error = error {
           print("Failed to connect, message: \(error.errorCode) \(error.localizedDescription)")
+        } else {
+            sendPluginResult(status: CDVCommandStatus_OK, message: "Connected")
         }
     }
     
@@ -126,18 +155,25 @@ extension CartrackPlugin: BleTerminalDelegate {
             switch action {
             case .lockState:
                 print("Action, Vehicle's door is \(terminal.lockState)")
+                sendPluginResult(status: CDVCommandStatus_OK, message: "\(terminal.lockState)")
             case .lock:
                 print("Action, Lock Action Success\nLock state: [\(terminal.lockState)]")
+                sendPluginResult(status: CDVCommandStatus_OK, message: "\(terminal.lockState)")
             case .unlock:
                 print("Action, Unlock Action Success\nLock state: [\(terminal.lockState)]")
+                sendPluginResult(status: CDVCommandStatus_OK, message: "\(terminal.lockState)")
             case .unlockNoKeyFob:
                 print("Action, Unlock with No Key Fob Action Success\nLock state: [\(terminal.lockState)]")
+                sendPluginResult(status: CDVCommandStatus_OK, message: "\(terminal.lockState)")
             case .horn:
                 print("Action, Horn Action Success")
+                sendPluginResult(status: CDVCommandStatus_OK, message: "Horn ok")
             case .headlight:
-                showMessage("Action,Headlight Action Success")
+                print("Action,Headlight Action Success")
+                sendPluginResult(status: CDVCommandStatus_OK, message: "headlight ok")
             case .ignitionState:
-              showMessage("Action, Vehicle's ignition state is \(terminal.ignitionState)")
+                print("Action, Vehicle's ignition state is \(terminal.ignitionState)")
+                sendPluginResult(status: CDVCommandStatus_OK, message: "\(terminal.ignitionState)")
             @unknown default:
                 break
             }
