@@ -43,8 +43,8 @@
           
     </platform>
     <platform name="ios">
-        <preference name="BLUETOOTH_USAGE_DESCRIPTION" default="Bluetooh required to connect to MiKey Terminal"/>
-        <preference name="BLUETOOTH_ALWAYS_USAGE_DESCRIPTION" default="Bluetooh required to connect to MiKey Terminal"/>
+        <preference name="BLUETOOTH_USAGE_DESCRIPTION" default="Bluetooth required to connect to MiKey Terminal"/>
+        <preference name="BLUETOOTH_ALWAYS_USAGE_DESCRIPTION" default="Bluetooth required to connect to MiKey Terminal"/>
 
         <config-file parent="/*" target="config.xml">
             <feature name="CartrackPlugin">
