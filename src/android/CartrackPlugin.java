@@ -23,27 +23,23 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-
-/**
- * This class echoes a string called from JavaScript.
- */
-
 
 public class CartrackPlugin extends CordovaPlugin implements BleListener {
 
     private BleTerminal BleTerminal;
     private HashMap<CallbackTypes, CallbackContext> CallbackContextList = new HashMap<>();
-    private String TAG = "CartrackPlugin";
+    private final String TAG = "CartrackPlugin";
     public static final int START_REQ_CODE = 0;
     public static final int PERMISSION_DENIED_ERROR = 20;
 
     protected final static String[] permissions = {
-        Manifest.permission.ACCESS_FINE_LOCATION,
-        Manifest.permission.ACCESS_COARSE_LOCATION,
-        Manifest.permission.BLUETOOTH
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.BLUETOOTH,
+            Manifest.permission.BLUETOOTH_CONNECT, // To use in new Bluetooth permission in Android 13
+            Manifest.permission.BLUETOOTH_SCAN
     };
 
     enum CallbackTypes{
@@ -163,12 +159,18 @@ public class CartrackPlugin extends CordovaPlugin implements BleListener {
         CallbackContextList.put(CallbackTypes.ON_ERROR, callbackContext);
     }
 
-    private void requestPermissions(CallbackContext callbackContext){
+    private void requestPermissions(CallbackContext callbackContext) {
         CallbackContextList.put(CallbackTypes.REQUEST_PERMISSIONS, callbackContext);
         if (hasPermisssion()) {
             callbackContext.success();
         } else {
-            PermissionHelper.requestPermissions(this, START_REQ_CODE, permissions);
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                // For Android 13 and above, we should use the new API for requesting permissions.
+                PermissionHelper.requestPermissions(this, START_REQ_CODE, permissions);
+            } else {
+                // For older Android versions below 13, requesting permissions using old.
+                cordova.requestPermissions(this, START_REQ_CODE, permissions);
+            }
         }
     }
 
