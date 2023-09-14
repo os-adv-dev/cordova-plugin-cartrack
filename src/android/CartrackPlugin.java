@@ -159,7 +159,7 @@ public class CartrackPlugin extends CordovaPlugin implements BleListener {
     }
 
     private void requestPermissions(CallbackContext callbackContext) {
-        if (android.os.Build.VERSION.SDK_INT > android.os.Build.VERSION_CODES.S) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
             // For Android 13 and above, we should use the new API for requesting permissions.
             String[] additionalPermissions = {
                     Manifest.permission.BLUETOOTH_CONNECT,
@@ -177,7 +177,7 @@ public class CartrackPlugin extends CordovaPlugin implements BleListener {
         if (hasPermisssion()) {
             callbackContext.success();
         } else {
-            if (android.os.Build.VERSION.SDK_INT > android.os.Build.VERSION_CODES.S) {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
                 // For older Android versions above 12, requesting permissions new.
                 PermissionHelper.requestPermissions(this, START_REQ_CODE, permissions);
             } else {
